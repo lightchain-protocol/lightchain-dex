@@ -42,6 +42,12 @@
     "zod": "^3.25.76",
     "zustand": "^5.0.14"
   },
+  "pnpm": {
+    "overrides": {
+      "@wagmi/connectors": "6.2.0",
+      "@wagmi/core": "2.22.1"
+    }
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@tailwindcss/postcss": "^4.3.0",
