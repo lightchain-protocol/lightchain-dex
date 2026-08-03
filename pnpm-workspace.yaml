@@ -6,6 +6,11 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   utf-8-validate: true
+# AppKit adapter peer range is ">=2.21.2", which otherwise pulls @wagmi/core@3
+# (tempo connectors → missing optional "accounts" module) and breaks next build.
+overrides:
+  '@wagmi/core': ^2.22.1
+  '@wagmi/connectors': ^6.2.0
 minimumReleaseAgeExclude:
   - next@15.4.5
   - next@15.4.7
