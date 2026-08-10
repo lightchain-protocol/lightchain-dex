@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { useMemo } from "react";
 import { estimateContractGas, simulateContract } from "viem/actions";
 import wethAbi from "@/contracts/wethAbi";
+import { getSwapMethods } from "@/lib/swap-method";
 
 const useWeb3Functions = () => {
   const chain = useCurrentChain();
@@ -149,31 +150,23 @@ const useWeb3Functions = () => {
         await checkAllowance(tokenFrom, amount);
       }
 
-      let methods: ContractFunctionName<
-        typeof routerV2Contract.abi,
-        "payable" | "nonpayable"
-      >[];
       let path: `0x${string}`[] = [];
 
       if (fromAddress === zeroAddress) {
         path = [weth, toAddress];
-        methods = [
-          "swapETHForExactTokens",
-          "swapExactETHForTokensSupportingFeeOnTransferTokens",
-        ];
       } else if (toAddress === zeroAddress) {
         path = [fromAddress, weth];
-        methods = [
-          "swapExactTokensForETH",
-          "swapExactTokensForETHSupportingFeeOnTransferTokens",
-        ];
       } else {
         path = [fromAddress, toAddress];
-        methods = [
-          "swapExactTokensForTokens",
-          "swapExactTokensForTokensSupportingFeeOnTransferTokens",
-        ];
       }
+
+      const methods = getSwapMethods(
+        fromAddress === zeroAddress,
+        toAddress === zeroAddress
+      ) as ContractFunctionName<
+        typeof routerV2Contract.abi,
+        "payable" | "nonpayable"
+      >[];
 
       const params = [amount, amountOutMin, path, address, deadline] as const;
 
