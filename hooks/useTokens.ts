@@ -5,6 +5,7 @@ import { erc20Abi, isAddress } from "viem";
 import useWeb3Clients from "./useWeb3Clients";
 import useUserStore from "@/store/user-store";
 import useCurrentChain from "./useCurrentChain";
+import { isValidTokenMetadata } from "@/lib/token-metadata";
 
 const useTokens = () => {
   const chain = useCurrentChain();
@@ -78,15 +79,15 @@ const useTokens = () => {
         { ...contractInfo, functionName: "decimals" },
       ],
     });
-    if (!name.result || !symbol.result || !decimals.result)
+    if (!isValidTokenMetadata(name, symbol, decimals))
       throw new Error("Token not found");
 
     const newToken = {
       address,
       chainId: publicClient.chain.id,
-      name: name.result,
-      symbol: symbol.result,
-      decimals: decimals.result,
+      name: name.result!,
+      symbol: symbol.result!,
+      decimals: decimals.result!,
     };
     addToken(newToken);
     return newToken;
