@@ -17,6 +17,11 @@ import { Pair } from "@/types/Pair";
 import pairAbi from "@/contracts/pairAbi";
 import useUserStore from "@/store/user-store";
 import { MAX_UINT256 } from "@/lib/utils";
+import {
+  applySlippage,
+  applySlippageToRatio,
+  deadlineFrom,
+} from "@/lib/slippage";
 import config from "@/config";
 import { toast } from "sonner";
 import { useMemo } from "react";
@@ -130,11 +135,11 @@ const useWeb3Functions = () => {
       }
 
       const block = await publicClient.getBlock();
-      const deadline = BigInt(Number(block.timestamp) + 60 * txDeadline);
-      const amountOutMin =
-        (parseUnits(valueTo, tokenTo.decimals) *
-          BigInt((100 - slippageTolerance) * 100)) /
-        10000n;
+      const deadline = deadlineFrom(block.timestamp, txDeadline);
+      const amountOutMin = applySlippage(
+        parseUnits(valueTo, tokenTo.decimals),
+        slippageTolerance
+      );
 
       const fromAddress =
         !tokenFrom.address || tokenFrom.symbol === chain.nativeCurrency.symbol
@@ -303,9 +308,9 @@ const useWeb3Functions = () => {
 
       let simulate;
       const block = await publicClient.getBlock();
-      const deadline = BigInt(Number(block.timestamp) + 60 * txDeadline);
-      const amountAMin = (amountA * BigInt((100 - slippageTolerance) * 100)) / 10000n;
-      const amountBMin = (amountB * BigInt((100 - slippageTolerance) * 100)) / 10000n;
+      const deadline = deadlineFrom(block.timestamp, txDeadline);
+      const amountAMin = applySlippage(amountA, slippageTolerance);
+      const amountBMin = applySlippage(amountB, slippageTolerance);
 
       if (tokenB.address && tokenA.symbol === chain.nativeCurrency.symbol) {
         simulate = await routerV2Contract.simulate.addLiquidityETH(
@@ -364,13 +369,15 @@ const useWeb3Functions = () => {
       let simulate;
 
       const liquidity = (pair.liquidity * BigInt(percent)) / 100n;
-      const amountMin0 = BigInt(
-        (liquidity * pair.reserve0 * BigInt((100 - slippageTolerance) * 100)) /
-        (pair.totalSupply * 10000n)
+      const amountMin0 = applySlippageToRatio(
+        liquidity * pair.reserve0,
+        pair.totalSupply,
+        slippageTolerance
       );
-      const amountMin1 = BigInt(
-        (liquidity * pair.reserve1 * BigInt((100 - slippageTolerance) * 100)) /
-        (pair.totalSupply * 10000n)
+      const amountMin1 = applySlippageToRatio(
+        liquidity * pair.reserve1,
+        pair.totalSupply,
+        slippageTolerance
       );
 
       const params = [
@@ -431,7 +438,7 @@ const useWeb3Functions = () => {
   const signPremitMessage = async (pair: Pair, percent: number) => {
     if (!walletClient || !pair || !address) return;
 
-    const deadline = BigInt(Math.round(Date.now() / 1000) + 60 * txDeadline);
+    const deadline = deadlineFrom(Math.round(Date.now() / 1000), txDeadline);
 
     try {
       const nonce = await publicClient.readContract({

@@ -11,6 +11,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import useUserStore from "@/store/user-store";
+import {
+  HIGH_SLIPPAGE,
+  MAX_SLIPPAGE,
+  MAX_TX_DEADLINE,
+  MIN_SLIPPAGE,
+  MIN_TX_DEADLINE,
+  normalizeSlippage,
+  normalizeTxDeadline,
+} from "@/lib/slippage";
 import { DialogClose } from "@radix-ui/react-dialog";
 import { SettingsIcon } from "lucide-react";
 import type { JSX } from "react";
@@ -68,9 +77,16 @@ export function SettingModal({ trigger, className }: Props) {
                   value={slippageTolerance}
                   type="number"
                   step={0.1}
+                  min={MIN_SLIPPAGE}
+                  max={MAX_SLIPPAGE}
                   onChange={(e) =>
                     useUserStore.setState({
                       slippageTolerance: Number(e.target.value),
+                    })
+                  }
+                  onBlur={() =>
+                    useUserStore.setState({
+                      slippageTolerance: normalizeSlippage(slippageTolerance),
                     })
                   }
                 />
@@ -82,6 +98,13 @@ export function SettingModal({ trigger, className }: Props) {
                 Your transaction may fail
               </p>
             )}
+            {slippageTolerance > HIGH_SLIPPAGE && (
+              <p className="mt-1 text-sm text-yellow-600 ">
+                {slippageTolerance > MAX_SLIPPAGE
+                  ? `Slippage is capped at ${MAX_SLIPPAGE}%`
+                  : "High slippage: you may receive much less than quoted"}
+              </p>
+            )}
           </div>
           <div className="flex items-center justify-between gap-4">
             <Label className="text-lg font-normal leading-[1.33] text-[var(--clr-black)] dark:text-[var(--clr-heading)]">
@@ -90,10 +113,17 @@ export function SettingModal({ trigger, className }: Props) {
             <Input
               type="number"
               className="w-16 md:w-20 h-10 py-[9px] md:text-base bg-[#EFEFFF] dark:bg-[rgba(255,255,255,0.10)] text-center"
-              min={2}
+              min={MIN_TX_DEADLINE}
+              max={MAX_TX_DEADLINE}
+              step={1}
               value={txDeadline}
               onChange={(e) =>
                 useUserStore.setState({ txDeadline: Number(e.target.value) })
+              }
+              onBlur={() =>
+                useUserStore.setState({
+                  txDeadline: normalizeTxDeadline(txDeadline),
+                })
               }
             />
           </div>
